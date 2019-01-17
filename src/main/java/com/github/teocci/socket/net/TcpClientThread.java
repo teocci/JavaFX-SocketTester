@@ -17,11 +17,14 @@ import static com.github.teocci.socket.net.TcpClient.STX;
 public class TcpClientThread extends Thread
 {
 
+    private static final byte CMD_SERVER_OPE = -125;
     //    private BufferedReader inReader;
     private DataInputStream inReader;
 
-    private Socket socket = null;
-    private TcpClient client = null;
+    private Socket socket;
+    private TcpClient client;
+
+    private int maxCount = 5;
 
     private volatile boolean running = false;
 
@@ -46,10 +49,17 @@ public class TcpClientThread extends Thread
                 byte ch = inReader.readByte();
 
                 if (ch == STX) {
-                    while (ch != ETX) {
+                    int count = 0;
+                    while (ch != ETX || (count < maxCount - 1)) {
+                        System.out.println("count: " + count + " | maxCount: " + maxCount);
+                        if (count == 1) {
+                            maxCount = ch == CMD_SERVER_OPE ? 10 : 5;
+                        }
                         bytes.add(ch);
                         ch = inReader.readByte();
+                        count++;
                     }
+
                     bytes.add(ch);
                     client.handle(getArray(bytes));
                 }

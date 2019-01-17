@@ -2,6 +2,7 @@ package com.github.teocci.socket;
 
 import com.github.teocci.socket.gui.LogTextArea;
 import com.github.teocci.socket.net.TcpClient;
+import com.github.teocci.socket.workers.Worker;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -11,6 +12,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,7 +22,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class SocketClientTester extends Application
 {
-    private final Button btnUpdate = new Button("GW Update");
+
+    private Stage stage;
+
+    private final Button btnUpdate = new Button("Start Updates");
     private final Button btnCommand = new Button("Command");
     private final Button btnDisconnect = new Button("Disconnect");
 
@@ -32,10 +37,13 @@ public class SocketClientTester extends Application
 
     private TcpClient thread;
 
+    private Timer timer = new Timer();
+    private Worker worker;
+
     @Override
     public void start(Stage primaryStage)
     {
-        String server = "1.246.220.44";
+        stage = primaryStage;
 
         mainContainer.setTop(toolBar);
         mainContainer.setCenter(addMapAnchor());
@@ -43,10 +51,32 @@ public class SocketClientTester extends Application
         toolBar.getItems().addAll(btnUpdate, btnCommand, btnDisconnect);
 
         Scene mapScene = new Scene(mainContainer, 600, 400);
-        primaryStage.setScene(mapScene);
-        primaryStage.show();
+        stage.setScene(mapScene);
+        stage.show();
 
-        primaryStage.setOnCloseRequest(we -> {
+        initThread();
+        initHandlers();
+    }
+
+    private void initThread()
+    {
+        try {
+            String server = "1.246.220.44";
+            System.out.println("Loading contents of URL: " + server);
+            // create a new thread object
+            thread = new TcpClient(server);
+            thread.start();
+            worker = new Worker(thread);
+        } catch (Exception e) {
+            e.printStackTrace();
+            thread = null;
+            shutdown();
+        }
+    }
+
+    private void initHandlers()
+    {
+        stage.setOnCloseRequest(we -> {
             if (thread != null) {
                 System.out.println("Stage is closing");
                 thread.stop();
@@ -54,11 +84,7 @@ public class SocketClientTester extends Application
             }
         });
 
-        btnUpdate.setOnAction(t -> {
-            if (thread != null) {
-                thread.sendUpdate();
-            }
-        });
+        btnUpdate.setOnAction(t -> updateTask());
 
         btnCommand.setOnAction(t -> {
             if (thread != null) {
@@ -71,16 +97,19 @@ public class SocketClientTester extends Application
                 thread.sendDisconnect();
             }
         });
+    }
 
-        try {
-            System.out.println("Loading contents of URL: " + server);
-            // create a new thread object
-            thread = new TcpClient(server);
-            thread.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-            thread = null;
-            shutdown();
+    private void updateTask()
+    {
+        if (worker.isRunning()) {
+            timer.cancel();
+            worker.stop();
+            btnUpdate.setText("Start Updates");
+        } else {
+            long period = 5000;
+            timer.scheduleAtFixedRate(worker, 0, period);
+            btnUpdate.setText("End Updates");
+//            timer.schedule(new Worker(thread), 0, period);
         }
     }
 

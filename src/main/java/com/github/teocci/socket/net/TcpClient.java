@@ -22,6 +22,15 @@ import static com.github.teocci.socket.utils.Random.uniform;
  */
 public class TcpClient implements Runnable
 {
+    /**
+     * Maximum possible value.
+     */
+    private static final int MAX_INDEX = 11;
+    /**
+     * Minimum possible value.
+     */
+    private static final int MIN_INDEX = 0;
+
     private final int PORT = 9090;
     private final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
@@ -45,11 +54,17 @@ public class TcpClient implements Runnable
     public final static byte CMD_CLIENT_RESP = 0x03;
     public final static byte CMD_CLIENT_BYE = 0x05;
 
-    private final byte CMD_SERVER_READY = -122;
-    private final byte CMD_SERVER_FILE_RESP = -127;
-    private final byte CMD_SERVER_UPDT_RESP = -126;
-    private final byte CMD_SERVER_OP_REQS = -125;
-    private final byte CMD_SERVER_BYE_REQS = -124;
+    public final byte CMD_SERVER_REA = -122;
+    public final byte CMD_SERVER_FIL = -127;
+    public final byte CMD_SERVER_UPD = -126;
+    public final byte CMD_SERVER_OPE = -125;
+    public final byte CMD_SERVER_BYE = -124;
+
+    public final int CMD_SERVER_REA_SIZE = 5;
+    public final int CMD_SERVER_FIL_SIZE = 5;
+    public final int CMD_SERVER_UPD_SIZE = 5;
+    public final int CMD_SERVER_OPE_SIZE = 10;
+    public final int CMD_SERVER_BYE_SIZE = 5;
 
 
     private final byte RES_SERVER_FILE_OK = -95;
@@ -68,7 +83,13 @@ public class TcpClient implements Runnable
     private Thread thread = null;
     private TcpClientThread client = null;
 
-    private byte operation = 0x00;
+    private byte[] operations = new byte[]{
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+    private byte[] alarms = new byte[]{
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
 
     public TcpClient(String server)
     {
@@ -137,36 +158,49 @@ public class TcpClient implements Runnable
         if (firstByte == STX) {
             System.out.println("CMD: " + cmd);
             switch (cmd) {
-                case CMD_SERVER_READY:
+                case CMD_SERVER_REA:
                     initClient();
                     break;
-                case CMD_SERVER_FILE_RESP:
+                case CMD_SERVER_FIL:
                     byte response = bytes[2];
                     if (response == RES_SERVER_FILE_OK) {
                         stage = STAGE_UPDT;
                     }
                     break;
-                case CMD_SERVER_UPDT_RESP:
+                case CMD_SERVER_UPD:
                     if (stage == STAGE_UPDT) {
-                        System.out.println("CMD_SERVER_UPDT_RESP: OK");
+                        System.out.println("CMD_SERVER_UPD: OK");
                     }
                     break;
-                case CMD_SERVER_OP_REQS:
+                case CMD_SERVER_OPE:
                     if (stage == STAGE_UPDT) {
                         byte gwId = bytes[2];
                         byte startERV = bytes[3];
                         byte endERV = bytes[4];
-                        operation = bytes[5];
+
+                        System.out.println("startERV: " + startERV);
+
+                        if (startERV == endERV) {
+                            int index = getIndex(startERV);
+                            if (index > -1) {
+                                operations[index] = bytes[5];
+                            }
+                        }
 
                         controlResponse(gwId, startERV, endERV);
-                        System.out.println("CMD_SERVER_OP_REQS: SENDED");
+                        System.out.println("CMD_SERVER_OPE: SENDED");
                     }
                     break;
-                case CMD_SERVER_BYE_REQS:
+                case CMD_SERVER_BYE:
                     initClient();
                     break;
             }
         }
+    }
+
+    private int getIndex(byte value)
+    {
+        return value > MIN_INDEX && value < MAX_INDEX + 1 ? value - 1 : -1;
     }
 
     private void initClient()
@@ -175,27 +209,14 @@ public class TcpClient implements Runnable
             File file = Common.getFileFromJar("/csv/TAG.CSV");
             if (file == null) return;
 
+            initHeader(CMD_CLIENT_INIT);
+
             int size = (int) file.length();
-
-            byte region = 42;
-            byte type = 1;
-            short code = 8668;
-
-            byte[] codeBytes = intTo16Bits(code);
-
             byte[] fileSize = intTo24Bits(size);
 
-
-            System.out.println(code);
             System.out.println(size);
 //            System.out.println(bytesToHex(fileSize));
 
-            outputStream.write(STX);
-            outputStream.write(CMD_CLIENT_INIT);
-            outputStream.write(region);
-            outputStream.write(type);
-            outputStream.write(codeBytes[0]);
-            outputStream.write(codeBytes[1]);
             outputStream.write(fileSize[0]);
             outputStream.write(fileSize[1]);
             outputStream.write(fileSize[2]);
@@ -228,18 +249,8 @@ public class TcpClient implements Runnable
     private void controlResponse(byte gwId, byte startERV, byte endERV)
     {
         try {
-            byte region = 42;
-            byte type = 1;
-            short code = 8668;
+            initHeader(CMD_CLIENT_RESP);
 
-            byte[] codeBytes = intTo16Bits(code);
-
-            outputStream.write(STX);
-            outputStream.write(CMD_CLIENT_RESP);
-            outputStream.write(region);
-            outputStream.write(type);
-            outputStream.write(codeBytes[0]);
-            outputStream.write(codeBytes[1]);
             outputStream.write(gwId);
             outputStream.write(startERV);
             outputStream.write(endERV);
@@ -275,27 +286,16 @@ public class TcpClient implements Runnable
     {
         if (stage == STAGE_UPDT) {
             try {
-                byte region = 42;
-                byte type = 1;
-                short code = 8668;
-
-                byte[] codeBytes = intTo16Bits(code);
+                initHeader(CMD_CLIENT_UPDT);
 
                 byte gwId = 1;
-                byte ervTotal = 11;
-
-                outputStream.write(STX);
-                outputStream.write(CMD_CLIENT_UPDT);
-                outputStream.write(region);
-                outputStream.write(type);
-                outputStream.write(codeBytes[0]);
-                outputStream.write(codeBytes[1]);
+                byte ervTotal = MAX_INDEX;
                 outputStream.write(gwId);
                 outputStream.write(ervTotal);
 
-                for (int i = 0; i < 11; i++) {
+                for (int i = 0; i < ervTotal; i++) {
                     byte ervId = (byte) (i + 1);
-                    byte operation = this.operation;
+                    byte operation = operations[i];
                     byte a02 = (byte) 45;
                     byte a03 = (byte) 12;
 
@@ -314,7 +314,7 @@ public class TcpClient implements Runnable
                     int radon = generateValue(RAD);
                     byte[] radonBytes = intTo16Bits(radon);
 
-                    byte alarm = (byte) generateValue(ALA);
+                    byte alarm = standardize(i);
 
                     outputStream.write(ervId);
                     outputStream.write(operation);
@@ -342,6 +342,24 @@ public class TcpClient implements Runnable
         }
     }
 
+    private void initHeader(byte cmd)
+    {
+        byte region = 42;
+        byte type = 1;
+        short code = 8668;
+
+        byte[] codeBytes = intTo16Bits(code);
+
+        System.out.println(code);
+
+        outputStream.write(STX);
+        outputStream.write(cmd);
+        outputStream.write(region);
+        outputStream.write(type);
+        outputStream.write(codeBytes[0]);
+        outputStream.write(codeBytes[1]);
+    }
+
     private int generateValue(int element)
     {
         int[] ranges;
@@ -359,17 +377,19 @@ public class TcpClient implements Runnable
             case RAD:
                 ranges = new int[]{2000, 10000, 26000};
                 return standardize(ranges);
-            case ALA:
-                return standardize();
             default:
                 return -1;
         }
     }
 
-    private int standardize()
+    private byte standardize(int index)
     {
         if (!firstUpdate) {
-            return bernoulli(0.95) ? 0 : 1;
+            if (alarms[index] == 0) {
+                return (byte) (bernoulli(0.95) ? 0 : 1);
+            } else {
+                return (byte) (bernoulli(0.95) ? 1 : 0);
+            }
         } else {
             return 0;
         }
@@ -418,7 +438,19 @@ public class TcpClient implements Runnable
 
     public void sendDisconnect()
     {
+        try {
+            initHeader(CMD_CLIENT_BYE);
 
+            outputStream.write(EMPTY);
+            outputStream.write(EMPTY);
+            outputStream.write(EMPTY);
+            outputStream.write(ETX);
+
+            sendBuffer(outputStream.toByteArray());
+            outputStream.reset();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void sendBuffer(byte[] buffer) throws IOException
@@ -470,7 +502,6 @@ public class TcpClient implements Runnable
         }
         return new String(hexChars);
     }
-
 
     private void printByte(byte cmd)
     {
