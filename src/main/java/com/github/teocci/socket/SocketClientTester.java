@@ -79,6 +79,7 @@ public class SocketClientTester extends Application
         stage.setOnCloseRequest(we -> {
             if (thread != null) {
                 System.out.println("Stage is closing");
+                thread.sendDisconnect();
                 thread.stop();
                 shutdown();
             }
