@@ -431,7 +431,7 @@ public class TcpClient implements Runnable
     {
         if (!firstUpdate) {
             if (alarms[index] == 0) {
-                return (byte) (bernoulli(0.99) ? 0 : 1);
+                return (byte) (bernoulli(0.95) ? 0 : 1);
             } else {
                 return (byte) (bernoulli(0.95) ? 1 : 0);
             }
@@ -443,14 +443,14 @@ public class TcpClient implements Runnable
     private int standardize(int[] ranges)
     {
         if (!firstUpdate) {
-            if (bernoulli(0.9)) {
+            if (bernoulli(0.95)) {
                 if (bernoulli(0.1)) {
                     return uniform(ranges[0]);
                 } else {
                     return uniform(ranges[0], ranges[1]);
                 }
             } else {
-                if (bernoulli(0.85)) {
+                if (bernoulli(0.90)) {
                     return uniform(ranges[1], ranges[2]);
                 } else {
                     return uniform(ranges[2], UInt16.MAX_VALUE + 1);
