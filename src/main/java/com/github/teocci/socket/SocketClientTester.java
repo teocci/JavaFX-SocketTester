@@ -1,6 +1,7 @@
 package com.github.teocci.socket;
 
 import com.github.teocci.socket.gui.LogTextArea;
+import com.github.teocci.socket.interfaces.ShutdownRequester;
 import com.github.teocci.socket.net.TcpClient;
 import com.github.teocci.socket.workers.Worker;
 import javafx.application.Application;
@@ -22,7 +23,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class SocketClientTester extends Application
 {
-
     private Stage stage;
 
     private final Button btnUpdate = new Button("Start Updates");
@@ -39,6 +39,8 @@ public class SocketClientTester extends Application
 
     private Timer timer = new Timer();
     private Worker worker;
+
+    private ShutdownRequester requester = this::closeClient;
 
     @Override
     public void start(Stage primaryStage)
@@ -64,7 +66,7 @@ public class SocketClientTester extends Application
             String server = "1.246.220.44";
             System.out.println("Loading contents of URL: " + server);
             // create a new thread object
-            thread = new TcpClient(server);
+            thread = new TcpClient(server, requester, getParameters());
             thread.start();
             worker = new Worker(thread);
         } catch (Exception e) {
@@ -76,14 +78,7 @@ public class SocketClientTester extends Application
 
     private void initHandlers()
     {
-        stage.setOnCloseRequest(we -> {
-            if (thread != null) {
-                System.out.println("Stage is closing");
-                thread.sendDisconnect();
-                thread.stop();
-                shutdown();
-            }
-        });
+        stage.setOnCloseRequest(we -> closeClient());
 
         btnUpdate.setOnAction(t -> updateTask());
 
@@ -100,14 +95,27 @@ public class SocketClientTester extends Application
         });
     }
 
+    private void closeClient()
+    {
+        if (thread != null) {
+            System.out.println("Stage is closing");
+            thread.sendDisconnect();
+            thread.stop();
+            shutdown();
+        }
+    }
+
     private void updateTask()
     {
         if (worker.isRunning()) {
             timer.cancel();
+            timer.purge();
             worker.stop();
             btnUpdate.setText("Start Updates");
         } else {
             long period = 5000;
+            worker = new Worker(thread);
+            timer = new Timer();
             timer.scheduleAtFixedRate(worker, 0, period);
             btnUpdate.setText("End Updates");
 //            timer.schedule(new Worker(thread), 0, period);
@@ -116,12 +124,7 @@ public class SocketClientTester extends Application
 
     private void shutdown()
     {
-        try {
-            TimeUnit.SECONDS.sleep(1);
-            System.exit(0);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        System.exit(0);
     }
 
     //Creates an AnchorPane for the map

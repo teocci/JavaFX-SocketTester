@@ -66,94 +66,10 @@ public class TcpClientThread extends Thread
             } catch (IOException ioe) {
                 System.out.println("Listening error: " + ioe.getMessage());
                 close();
-                client.stop();
+                client.requestShutdown();
+//                client.stop();
             }
         }
-//
-//        try {
-//            // Connect to the server
-//            Socket socket = new Socket(server, PORT);
-//
-//            // Create input and output streams to read from and write to the server
-//            outWriter = new PrintStream(socket.getOutputStream());
-////            outWriter = new DataOutputStream(socket.getOutputStream());
-//
-//            File file = getFileFromURL("TAG.CSV");
-//            long size = file.length();
-//
-//            int code = 8668;
-//
-//            byte[] codeBytes = new byte[2];
-//            codeBytes[0] = (byte) ((code >> 8) & 0xFF);
-//            codeBytes[1] = (byte) (code & 0xFF);
-//
-//            byte[] fileSize = new byte[3];
-//            fileSize[0] = (byte) ((size >> 16) & 0xFF);
-//            fileSize[1] = (byte) ((size >> 8) & 0xFF);
-//            fileSize[2] = (byte) (size & 0xFF);
-//
-//
-//            System.out.println(code);
-//            System.out.println(size);
-////            System.out.println(bytesToHex(fileSize));
-//
-//            byte[] buf;
-//
-//            byte region = 42;
-//            byte type = 1;
-//
-//            outputStream.write(STX);
-//            outputStream.write(CMD);
-//            outputStream.write(region);
-//            outputStream.write(type);
-//            outputStream.write(codeBytes[0]);
-//            outputStream.write(codeBytes[1]);
-//            outputStream.write(fileSize[0]);
-//            outputStream.write(fileSize[1]);
-//            outputStream.write(fileSize[2]);
-//            outputStream.write(EMPTY);
-//            outputStream.write(EMPTY);
-//            outputStream.write(EMPTY);
-//            outputStream.write(EMPTY);
-//            outputStream.write(EMPTY);
-//            outputStream.write(ETX);
-//
-//            buf = outputStream.toByteArray();
-//
-//            outWriter.write(buf);
-//            outWriter.flush();
-//
-//            byte[] fileData = new byte[(int) size];
-//            FileInputStream fis = new FileInputStream(file);
-//            BufferedInputStream bis = new BufferedInputStream(fis);
-//
-//            int sizeRead = bis.read(fileData, 0, fileData.length);
-//            if (sizeRead != -1) {
-//                System.out.println("Start sending (" + sizeRead + " bytes)");
-//                outWriter.write(fileData, 0, fileData.length);
-//                outWriter.flush();
-//                System.out.println("Done.");
-//            }
-//
-//
-//            // Follow the HTTP protocol of GET <path> HTTP/1.0 followed by an empty line
-////            out.println("GET " + path + " HTTP/1.0");
-////            out.println();
-//
-//            // Read data from the server until we finish reading the document
-//            String line = inReader.readLine();
-//            while (line != null) {
-//                System.out.println(line);
-//                line = inReader.readLine();
-//            }
-//
-//            // Close our streams
-//            inReader.close();
-//            outWriter.close();
-//            socket.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
     }
 
     public void open()
@@ -164,7 +80,8 @@ public class TcpClientThread extends Thread
             running = true;
         } catch (IOException ioe) {
             System.out.println("Error getting input stream: " + ioe);
-            client.stop();
+            client.requestShutdown();
+//            client.stop();
         }
     }
 

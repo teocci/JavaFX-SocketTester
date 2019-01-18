@@ -1,7 +1,9 @@
 package com.github.teocci.socket.net;
 
+import com.github.teocci.socket.interfaces.ShutdownRequester;
 import com.github.teocci.socket.utils.Common;
 import com.github.teocci.socket.utils.UInt16;
+import javafx.application.Application.Parameters;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.List;
 
 import static com.github.teocci.socket.utils.Random.bernoulli;
 import static com.github.teocci.socket.utils.Random.uniform;
@@ -91,8 +94,25 @@ public class TcpClient implements Runnable
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
 
-    public TcpClient(String server)
+    private byte region = 42;
+    private byte type = 1;
+    private short code = 8668;
+
+    private ShutdownRequester requester;
+
+    public TcpClient(String server, ShutdownRequester requester, Parameters params)
     {
+        this.requester = requester;
+
+        List<String> rawParams = params.getRaw();
+        if (!rawParams.isEmpty() && rawParams.size() == 3) {
+            region = Byte.valueOf(rawParams.get(0));
+            type = Byte.valueOf(rawParams.get(1));
+            code = Short.valueOf(rawParams.get(2));
+        }
+
+        System.out.println("region, type, code: " + region + ", " + type + ", " + code);
+
         System.out.println("Establishing connection. Please wait ...");
         try {
             // Connect to the server
@@ -128,6 +148,11 @@ public class TcpClient implements Runnable
             thread = new Thread(this);
             thread.start();
         }
+    }
+
+    public void requestShutdown()
+    {
+        if (requester != null) requester.onConnectionLost();
     }
 
     public void stop()
@@ -209,7 +234,7 @@ public class TcpClient implements Runnable
             File file = Common.getFileFromJar("/csv/TAG.CSV");
             if (file == null) return;
 
-            initHeader(CMD_CLIENT_INIT);
+            addHeader(CMD_CLIENT_INIT);
 
             int size = (int) file.length();
             byte[] fileSize = intTo24Bits(size);
@@ -249,7 +274,7 @@ public class TcpClient implements Runnable
     private void controlResponse(byte gwId, byte startERV, byte endERV)
     {
         try {
-            initHeader(CMD_CLIENT_RESP);
+            addHeader(CMD_CLIENT_RESP);
 
             outputStream.write(gwId);
             outputStream.write(startERV);
@@ -263,7 +288,7 @@ public class TcpClient implements Runnable
         }
     }
 
-    public void handle(String line)
+    private void handle(String line)
     {
         System.out.println("Line: " + line + " | Length: " + line.length());
         byte[] bytes = getBytes(line);
@@ -286,7 +311,7 @@ public class TcpClient implements Runnable
     {
         if (stage == STAGE_UPDT) {
             try {
-                initHeader(CMD_CLIENT_UPDT);
+                addHeader(CMD_CLIENT_UPDT);
 
                 byte gwId = 1;
                 byte ervTotal = MAX_INDEX;
@@ -342,12 +367,26 @@ public class TcpClient implements Runnable
         }
     }
 
-    private void initHeader(byte cmd)
+    public void sendCommand()
     {
-        byte region = 42;
-        byte type = 1;
-        short code = 8668;
 
+    }
+
+    public void sendDisconnect()
+    {
+        try {
+            addHeader(CMD_CLIENT_BYE);
+            addByeBody();
+
+            sendBuffer(outputStream.toByteArray());
+            outputStream.reset();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addHeader(byte cmd)
+    {
         byte[] codeBytes = intTo16Bits(code);
 
         System.out.println(code);
@@ -358,6 +397,12 @@ public class TcpClient implements Runnable
         outputStream.write(type);
         outputStream.write(codeBytes[0]);
         outputStream.write(codeBytes[1]);
+    }
+
+    private void sendBuffer(byte[] buffer) throws IOException
+    {
+        outWriter.write(buffer);
+        outWriter.flush();
     }
 
     private int generateValue(int element)
@@ -386,7 +431,7 @@ public class TcpClient implements Runnable
     {
         if (!firstUpdate) {
             if (alarms[index] == 0) {
-                return (byte) (bernoulli(0.95) ? 0 : 1);
+                return (byte) (bernoulli(0.99) ? 0 : 1);
             } else {
                 return (byte) (bernoulli(0.95) ? 1 : 0);
             }
@@ -431,32 +476,12 @@ public class TcpClient implements Runnable
         }
     }
 
-    public void sendCommand()
+    private void addByeBody()
     {
-
-    }
-
-    public void sendDisconnect()
-    {
-        try {
-            initHeader(CMD_CLIENT_BYE);
-
-            outputStream.write(EMPTY);
-            outputStream.write(EMPTY);
-            outputStream.write(EMPTY);
-            outputStream.write(ETX);
-
-            sendBuffer(outputStream.toByteArray());
-            outputStream.reset();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void sendBuffer(byte[] buffer) throws IOException
-    {
-        outWriter.write(buffer);
-        outWriter.flush();
+        outputStream.write(EMPTY);
+        outputStream.write(EMPTY);
+        outputStream.write(EMPTY);
+        outputStream.write(ETX);
     }
 
     private byte[] intTo16Bits(int value)
