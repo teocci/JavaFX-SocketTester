@@ -443,11 +443,8 @@ public class TcpClient implements Runnable
     {
         if (firstUpdate) return uniform(ranges[0]);
 
-        if (bernoulli(0.96)) {
-            return bernoulli(0.01) ? uniform(ranges[0]) : uniform(ranges[0], ranges[1]);
-        } else {
-            return bernoulli(0.95) ? uniform(ranges[1], ranges[2]) : uniform(ranges[2], MAX_VALUE + 1);
-        }
+        return bernoulli(0.95) ? (bernoulli(0.01) ? uniform(ranges[0]) : uniform(ranges[0], ranges[1])) :
+                (bernoulli(0.95) ? uniform(ranges[1], ranges[2]) : uniform(ranges[2], MAX_VALUE + 1));
     }
 
     private int normalize(double value, int[] ranges)
