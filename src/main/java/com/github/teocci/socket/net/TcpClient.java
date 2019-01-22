@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.github.teocci.socket.utils.Random.bernoulli;
 import static com.github.teocci.socket.utils.Random.uniform;
+import static com.github.teocci.socket.utils.UInt16.MAX_VALUE;
 
 /**
  * Created by teocci.
@@ -339,7 +340,8 @@ public class TcpClient implements Runnable
                     int radon = generateValue(RAD);
                     byte[] radonBytes = intTo16Bits(radon);
 
-                    byte alarm = standardize(i);
+                    alarms[i] = standardize(i);
+                    byte alarm = alarms[i];
 
                     outputStream.write(ervId);
                     outputStream.write(operation);
@@ -429,35 +431,23 @@ public class TcpClient implements Runnable
 
     private byte standardize(int index)
     {
-        if (!firstUpdate) {
-            if (alarms[index] == 0) {
-                return (byte) (bernoulli(0.95) ? 0 : 1);
-            } else {
-                return (byte) (bernoulli(0.95) ? 1 : 0);
-            }
+        if (firstUpdate) return 0;
+
+        if (alarms[index] == 0) {
+            return bernoulli(0.99) ? alarms[index] : 1;
         } else {
-            return 0;
+            return bernoulli(0.99) ? alarms[index] : 0;
         }
     }
 
     private int standardize(int[] ranges)
     {
-        if (!firstUpdate) {
-            if (bernoulli(0.95)) {
-                if (bernoulli(0.1)) {
-                    return uniform(ranges[0]);
-                } else {
-                    return uniform(ranges[0], ranges[1]);
-                }
-            } else {
-                if (bernoulli(0.90)) {
-                    return uniform(ranges[1], ranges[2]);
-                } else {
-                    return uniform(ranges[2], UInt16.MAX_VALUE + 1);
-                }
-            }
+        if (firstUpdate) return uniform(ranges[0]);
+
+        if (bernoulli(0.99)) {
+            return bernoulli(0.01) ? uniform(ranges[0]) : uniform(ranges[0], ranges[1]);
         } else {
-            return uniform(ranges[0]);
+            return bernoulli(0.95) ? uniform(ranges[1], ranges[2]) : uniform(ranges[2], MAX_VALUE + 1);
         }
     }
 

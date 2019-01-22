@@ -23,11 +23,11 @@ public class Random
      * number for each execution of the program.
      * Ordinarily, you should call this method at most once per program.
      *
-     * @param s the seed
+     * @param seed the seed
      */
-    public static void setSeed(long s)
+    public static void setSeed(long seed)
     {
-        seed = s;
+        Random.seed = seed;
         random = new java.util.Random(seed);
     }
 
@@ -106,7 +106,7 @@ public class Random
         if ((b <= a) || ((long) b - a >= Integer.MAX_VALUE)) {
             throw new IllegalArgumentException("invalid range: [" + a + ", " + b + ")");
         }
-        return (int) (a + uniform(b - a));
+        return (a + uniform(b - a));
     }
 
     /**
