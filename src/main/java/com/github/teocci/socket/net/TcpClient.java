@@ -2,7 +2,6 @@ package com.github.teocci.socket.net;
 
 import com.github.teocci.socket.interfaces.ShutdownRequester;
 import com.github.teocci.socket.utils.Common;
-import com.github.teocci.socket.utils.UInt16;
 import javafx.application.Application.Parameters;
 
 import java.io.BufferedInputStream;
@@ -325,22 +324,22 @@ public class TcpClient implements Runnable
                     byte a02 = (byte) 45;
                     byte a03 = (byte) 12;
 
-                    int particles = generateValue(PAR);
+                    int particles = generateIndicator(PAR);
                     byte[] particlesBytes = intTo16Bits(particles);
 
-                    int p02 = generateValue(ANO);
+                    int p02 = generateIndicator(ANO);
                     byte[] p02Bytes = intTo16Bits(p02);
 
-                    int dioxide = generateValue(DIO);
+                    int dioxide = generateIndicator(DIO);
                     byte[] dioxideBytes = intTo16Bits(dioxide);
 
-                    int voc = generateValue(VOC);
+                    int voc = generateIndicator(VOC);
                     byte[] vocBytes = intTo16Bits(voc);
 
-                    int radon = generateValue(RAD);
+                    int radon = generateIndicator(RAD);
                     byte[] radonBytes = intTo16Bits(radon);
 
-                    alarms[i] = standardize(i);
+                    alarms[i] = generateAlarm(i);
                     byte alarm = alarms[i];
 
                     outputStream.write(ervId);
@@ -407,44 +406,44 @@ public class TcpClient implements Runnable
         outWriter.flush();
     }
 
-    private int generateValue(int element)
+    private int generateIndicator(int element)
     {
         int[] ranges;
         switch (element) {
             case PAR:
             case ANO:
                 ranges = new int[]{5000, 10000, 25000};
-                return standardize(ranges);
+                return generateValue(ranges);
             case DIO:
                 ranges = new int[]{6000, 13000, 26000};
-                return standardize(ranges);
+                return generateValue(ranges);
             case VOC:
                 ranges = new int[]{13000, 26000, 40000};
-                return standardize(ranges);
+                return generateValue(ranges);
             case RAD:
                 ranges = new int[]{2000, 10000, 26000};
-                return standardize(ranges);
+                return generateValue(ranges);
             default:
                 return -1;
         }
     }
 
-    private byte standardize(int index)
+    private byte generateAlarm(int index)
     {
         if (firstUpdate) return 0;
 
         if (alarms[index] == 0) {
             return bernoulli(0.99) ? alarms[index] : 1;
         } else {
-            return bernoulli(0.99) ? alarms[index] : 0;
+            return bernoulli(0.90) ? alarms[index] : 0;
         }
     }
 
-    private int standardize(int[] ranges)
+    private int generateValue(int[] ranges)
     {
         if (firstUpdate) return uniform(ranges[0]);
 
-        if (bernoulli(0.99)) {
+        if (bernoulli(0.96)) {
             return bernoulli(0.01) ? uniform(ranges[0]) : uniform(ranges[0], ranges[1]);
         } else {
             return bernoulli(0.95) ? uniform(ranges[1], ranges[2]) : uniform(ranges[2], MAX_VALUE + 1);
