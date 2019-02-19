@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.github.teocci.socket.utils.Random.bernoulli;
@@ -28,7 +29,7 @@ public class TcpClient implements Runnable
     /**
      * Maximum possible value.
      */
-    private static final int MAX_INDEX = 11;
+    private static final int MAX_INDEX = 49;
     /**
      * Minimum possible value.
      */
@@ -86,13 +87,9 @@ public class TcpClient implements Runnable
     private Thread thread = null;
     private TcpClientThread client = null;
 
-    private byte[] operations = new byte[]{
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+    private byte[] operations = new byte[MAX_INDEX];
 
-    private byte[] alarms = new byte[]{
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+    private byte[] alarms = new byte[MAX_INDEX];
 
 
     private String server = "127.0.0.1";
@@ -115,6 +112,9 @@ public class TcpClient implements Runnable
             type = Byte.valueOf(rawParams.get(2));
             code = Short.valueOf(rawParams.get(3));
         }
+
+        Arrays.fill(operations, (byte) 0x00);
+        Arrays.fill(alarms, (byte) 0x00);
 
         System.out.println("Loading contents of URL: " + server);
         System.out.println("region, type, code: " + region + ", " + type + ", " + code);
