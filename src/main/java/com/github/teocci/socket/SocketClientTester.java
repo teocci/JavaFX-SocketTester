@@ -14,7 +14,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.util.Timer;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by teocci.
@@ -63,10 +62,8 @@ public class SocketClientTester extends Application
     private void initThread()
     {
         try {
-            String server = "1.246.220.44";
-            System.out.println("Loading contents of URL: " + server);
             // create a new thread object
-            thread = new TcpClient(server, requester, getParameters());
+            thread = new TcpClient(getParameters(), requester);
             thread.start();
             worker = new Worker(thread);
         } catch (Exception e) {

@@ -94,23 +94,29 @@ public class TcpClient implements Runnable
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
 
+
+    private String server = "127.0.0.1";
     private byte region = 42;
     private byte type = 1;
     private short code = 8668;
 
     private ShutdownRequester requester;
 
-    public TcpClient(String server, ShutdownRequester requester, Parameters params)
+    public TcpClient(Parameters params, ShutdownRequester requester)
     {
-        this.requester = requester;
+        if (params == null) return;
+        if (requester == null) return;
 
+        this.requester = requester;
         List<String> rawParams = params.getRaw();
-        if (!rawParams.isEmpty() && rawParams.size() == 3) {
-            region = Byte.valueOf(rawParams.get(0));
-            type = Byte.valueOf(rawParams.get(1));
-            code = Short.valueOf(rawParams.get(2));
+        if (!rawParams.isEmpty() && rawParams.size() == 4) {
+            server = rawParams.get(0).isEmpty() ? server : rawParams.get(0);
+            region = Byte.valueOf(rawParams.get(1));
+            type = Byte.valueOf(rawParams.get(2));
+            code = Short.valueOf(rawParams.get(3));
         }
 
+        System.out.println("Loading contents of URL: " + server);
         System.out.println("region, type, code: " + region + ", " + type + ", " + code);
 
         System.out.println("Establishing connection. Please wait ...");
@@ -217,7 +223,9 @@ public class TcpClient implements Runnable
                     }
                     break;
                 case CMD_SERVER_BYE:
-                    initClient();
+                    System.out.println("CMD_SERVER_BYE: OK");
+                    stop();
+                    requestShutdown();
                     break;
             }
         }
@@ -231,7 +239,7 @@ public class TcpClient implements Runnable
     private void initClient()
     {
         try {
-            File file = Common.getFileFromJar("/csv/TAG.CSV");
+            File file = Common.getFileFromJar("/csv/TAG4221.csv");
             if (file == null) return;
 
             addHeader(CMD_CLIENT_INIT);
