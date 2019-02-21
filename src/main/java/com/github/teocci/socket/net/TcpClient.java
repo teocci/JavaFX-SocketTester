@@ -441,7 +441,7 @@ public class TcpClient implements Runnable
         if (firstUpdate) return 0;
 
         if (alarms[index] == 0) {
-            return bernoulli(0.99) ? alarms[index] : 1;
+            return bernoulli(0.99) ? alarms[index] : (byte) (1 + uniform(255));
         } else {
             return bernoulli(0.90) ? alarms[index] : 0;
         }
