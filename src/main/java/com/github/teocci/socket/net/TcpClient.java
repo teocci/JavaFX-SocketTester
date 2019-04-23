@@ -74,6 +74,9 @@ public class TcpClient implements Runnable
     private final byte RES_SERVER_FILE_OK = -95;
     private final byte RES_SERVER_FILE_RETRY = -94;
 
+    private final String CSV_FILE_NAME = "TAG4221-49.csv";
+    private final String CSV_FILE_PATH = "/csv/" + CSV_FILE_NAME;
+
     private volatile byte stage = STAGE_INIT;
     private boolean firstUpdate = true;
 
@@ -219,7 +222,7 @@ public class TcpClient implements Runnable
                         }
 
                         controlResponse(gwId, startERV, endERV);
-                        System.out.println("CMD_SERVER_OPE: SENDED");
+                        System.out.println("CMD_SERVER_OPE: SENT");
                     }
                     break;
                 case CMD_SERVER_BYE:
@@ -239,7 +242,7 @@ public class TcpClient implements Runnable
     private void initClient()
     {
         try {
-            File file = Common.getFileFromJar("/csv/TAG4221.csv");
+            File file = Common.getFileFromJar(CSV_FILE_PATH);
             if (file == null) return;
 
             addHeader(CMD_CLIENT_INIT);
