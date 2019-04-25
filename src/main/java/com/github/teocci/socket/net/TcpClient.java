@@ -47,7 +47,7 @@ public class TcpClient implements Runnable
     public final static int DIO = 1;
     public final static int VOC = 2;
     public final static int RAD = 3;
-    public final static int ANO = 4;
+    public final static int DUS = 4;
     public final static int ALA = 5;
 
     public final static byte STAGE_INIT = 0x01;
@@ -91,6 +91,7 @@ public class TcpClient implements Runnable
     private TcpClientThread client = null;
 
     private byte[] operations = new byte[MAX_INDEX];
+    private byte[] filterReplacementCycles = new byte[MAX_INDEX];
 
     private byte[] alarms = new byte[MAX_INDEX];
 
@@ -117,6 +118,7 @@ public class TcpClient implements Runnable
         }
 
         Arrays.fill(operations, (byte) 0x00);
+        Arrays.fill(filterReplacementCycles, (byte) 0x00);
         Arrays.fill(alarms, (byte) 0x00);
 
         System.out.println("Loading contents of URL: " + server);
@@ -218,11 +220,14 @@ public class TcpClient implements Runnable
                             int index = getIndex(startERV);
                             if (index > -1) {
                                 operations[index] = bytes[5];
+                                filterReplacementCycles[index] = bytes[6];
+
+                                System.out.println("Operation: " + operations[index] + "Filter Cycle: " + filterReplacementCycles[index]);
                             }
                         }
 
                         controlResponse(gwId, startERV, endERV);
-                        System.out.println("CMD_SERVER_OPE: SENT");
+                        System.out.println("CMD_SERVER_OPE: OK");
                     }
                     break;
                 case CMD_SERVER_BYE:
@@ -332,14 +337,14 @@ public class TcpClient implements Runnable
                 for (int i = 0; i < ervTotal; i++) {
                     byte ervId = (byte) (i + 1);
                     byte operation = operations[i];
-                    byte a02 = (byte) 45;
-                    byte a03 = (byte) 12;
+                    byte occupancy = (byte) 45;
+                    byte filterReplacementCycle = filterReplacementCycles[i];
 
                     int particles = generateIndicator(PAR);
                     byte[] particlesBytes = intTo16Bits(particles);
 
-                    int p02 = generateIndicator(ANO);
-                    byte[] p02Bytes = intTo16Bits(p02);
+                    int dust = generateIndicator(DUS);
+                    byte[] dustBytes = intTo16Bits(dust);
 
                     int dioxide = generateIndicator(DIO);
                     byte[] dioxideBytes = intTo16Bits(dioxide);
@@ -355,10 +360,10 @@ public class TcpClient implements Runnable
 
                     outputStream.write(ervId);
                     outputStream.write(operation);
-                    outputStream.write(a02);
-                    outputStream.write(a03);
+                    outputStream.write(occupancy);
+                    outputStream.write(filterReplacementCycle);
                     outputStream.write(particlesBytes);
-                    outputStream.write(p02Bytes);
+                    outputStream.write(dustBytes);
                     outputStream.write(dioxideBytes);
                     outputStream.write(vocBytes);
                     outputStream.write(radonBytes);
@@ -422,7 +427,7 @@ public class TcpClient implements Runnable
         int[] ranges;
         switch (element) {
             case PAR:
-            case ANO:
+            case DUS:
                 ranges = new int[]{5000, 10000, 25000};
                 return generateValue(ranges);
             case DIO:
