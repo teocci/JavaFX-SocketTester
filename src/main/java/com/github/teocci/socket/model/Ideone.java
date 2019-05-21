@@ -87,19 +87,26 @@ public class Ideone
 
     public List<List<Integer>> findMaxSumNonAdjacentStream(List<Integer> numbers, int size)
     {
-        int toIndex = size, fromIndex = 0;
+        int fromIndex = 0;
 
+//        Map<Integer, Integer> maxSumMap = IntStream
+//                .range(fromIndex, size)
+//                .filter(i -> numbers.get(i) > 0)
+//                .mapToObj(i -> new AbstractMap.SimpleEntry<>(i, numbers.get(i)))
+//                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+//        Map<Integer, Integer> maxSumMap = IntStream.range(fromIndex, size).boxed().collect(Collectors.toMap(i -> i, i -> numbers.get(i)));
         Map<Integer, Integer> maxSumMap = IntStream
-                .range(fromIndex, toIndex)
+                .range(fromIndex, size)
                 .filter(i -> numbers.get(i) > 0)
-                .mapToObj(i -> new AbstractMap.SimpleEntry<>(i, numbers.get(i)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
+                .boxed()
+                .collect(Collectors.toMap(Function.identity(), numbers::get));
 
         Map<Integer, List<Integer>> indexMap = IntStream
-                .range(fromIndex, toIndex)
+                .range(fromIndex, size)
                 .filter(i -> numbers.get(i) > 0)
                 .mapToObj(i -> new AbstractMap.SimpleEntry<>(i, Collections.singletonList(numbers.get(i))))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 //        Map<Integer, List<Integer>> indexMap = numbers.stream()
 //                .collect(Collectors.toMap(Function.identity(), Arrays::asList));
