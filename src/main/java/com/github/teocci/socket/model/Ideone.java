@@ -14,6 +14,29 @@ import java.util.stream.IntStream;
  */
 public class Ideone
 {
+    public static void main(String[] args)
+    {
+//        List<Integer> numbers = Arrays.asList(4, 5, 4, 3);
+        List<Integer> numbers = Arrays.asList(1, 9, 1, 7, 7, 5, 4, 1, 6);
+//        List<Integer> numbers = Arrays.asList(-1, 7, 8, -5, 4, 9, -2, 3);
+
+        String sss = "";
+        String ddd = "";
+        Ideone mm = new Ideone();
+        String maxi = mm.maximumm(numbers, ddd);
+        sss = sss.concat(maxi);
+        System.out.println(sss);
+    }
+
+    // Generic function to find the index of an element in an object array in Java
+    public static <T> int find(T[] a, T target)
+    {
+        return IntStream.range(0, a.length)
+                .filter(i -> target.equals(a[i]))
+                .findFirst()
+                .orElse(-1);    // return -1 if target is not found
+    }
+
     public String maximumm(List<Integer> numbers, String sss)
     {
         int toIndex = 3, fromIndex = 0;
@@ -24,17 +47,24 @@ public class Ideone
             System.out.println("fromIndex: " + fromIndex + " | toIndex: " + toIndex);
             Map<Integer, Integer> map = IntStream
                     .range(fromIndex, toIndex)
-                    .filter(i -> numbers.get(i) > 0)
-                    .mapToObj(i -> new AbstractMap.SimpleEntry<>(i, numbers.get(i)))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
+//                    .filter(i -> numbers.get(i) > 0)
+                    .boxed()
+//                    .collect(Collectors.toMap(i -> i, numbers::get));
+                    .collect(Collectors.toMap(i -> i, i -> numbers.get(i) > 0 ? numbers.get(i) : 0));
 
             System.out.println(Collections.singletonList(map));
             // find max of sublist
-            int maxOfSub = numbers.subList(fromIndex, toIndex).stream().max(Integer::compareTo).get();
+            int maxOfSub = numbers.subList(fromIndex, toIndex).stream().max(Integer::compareTo).orElse(-1);
 
             System.out.println("maxOfSub: " + maxOfSub);
             //update indexes
-            fromIndex = map.getOrDefault(maxOfSub, toIndex - 1) + 2;
+//            fromIndex = map.getOrDefault(maxOfSub, toIndex - 1) + 2;
+            fromIndex = IntStream
+                    .range(fromIndex, toIndex)
+                    .filter(i -> map.containsKey(i) && map.get(i).equals(maxOfSub))
+                    .findFirst()
+                    .orElse(toIndex - 1) + 2;
+
             toIndex += fromIndex;
 
             if (maxOfSub > 0)
@@ -42,8 +72,13 @@ public class Ideone
         }
 
         if (fromIndex == size) fromIndex = size - 1;
+        System.out.println("fromIndex: " + fromIndex + " | toIndex: " + toIndex);
 
-        int lastMax = numbers.subList(fromIndex, size).stream().max(Integer::compareTo).get();
+        int lastMax = numbers
+                .subList(fromIndex, size)
+                .stream()
+                .max(Integer::compareTo)
+                .orElse(-1);
 
         System.out.println("lastMax: " + lastMax);
         if (lastMax > 0) {
@@ -96,15 +131,18 @@ public class Ideone
 //                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 //        Map<Integer, Integer> maxSumMap = IntStream.range(fromIndex, size).boxed().collect(Collectors.toMap(i -> i, i -> numbers.get(i)));
+//        Map<Integer, Integer> maxSumMap = IntStream.range(fromIndex, size).boxed().collect(Collectors.toMap(Function.identity(), numbers::get));
+//        Map<Integer, Integer> maxSumMap = IntStream.range(fromIndex, size).boxed()
+//                .collect(Collectors.toMap(i -> i, i -> numbers.get(i) > 0 ? numbers.get(i) : 0));
         Map<Integer, Integer> maxSumMap = IntStream
                 .range(fromIndex, size)
-                .filter(i -> numbers.get(i) > 0)
                 .boxed()
-                .collect(Collectors.toMap(Function.identity(), numbers::get));
+                .collect(Collectors.toMap(i -> i, i -> numbers.get(i) > 0 ? numbers.get(i) : 0));
+
+        System.out.println("maxSumMap: " + maxSumMap);
 
         Map<Integer, List<Integer>> indexMap = IntStream
                 .range(fromIndex, size)
-                .filter(i -> numbers.get(i) > 0)
                 .mapToObj(i -> new AbstractMap.SimpleEntry<>(i, Collections.singletonList(numbers.get(i))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -125,10 +163,22 @@ public class Ideone
                     int index = entry.getKey();
                     int prevOne = index - 1;
                     int prevTwo = index - 2;
-                    int maxVal = Math.max(maxSumMap.get(prevOne), maxSumMap.get(prevTwo) + entry.getValue());
-                    boolean exclude = maxSumMap.get(prevOne) > (maxSumMap.get(prevTwo) + entry.getValue());
+                    int prevValOne = maxSumMap.getOrDefault(prevOne, 0);
+                    int prevValTwo = maxSumMap.getOrDefault(prevTwo, 0);
 
-                    List<Integer> elements = exclude ? new ArrayList<>(indexMap.get(prevOne)) : new ArrayList<>(indexMap.get(prevTwo));
+                    System.out.println("prevValOne: " + prevValOne + " | prevValTwo: " + prevValTwo);
+                    int maxVal = Math.max(prevValOne, prevValTwo + entry.getValue());
+                    boolean exclude = prevValOne > (prevValTwo + entry.getValue());
+
+//                    List<Integer> elements = exclude ? new ArrayList<>(indexMap.get(prevOne)) : new ArrayList<>(indexMap.get(prevTwo));
+
+                    List<Integer> elements = new ArrayList<>();
+                    if (prevValOne > 0 && exclude) {
+                        elements = new ArrayList<>(indexMap.get(prevOne));
+                    } else if (prevValTwo > 0 && !exclude) {
+                        elements = new ArrayList<>(indexMap.get(prevTwo));
+                    }
+
                     if (!exclude) {
                         elements.add(entry.getValue());
                         elements = elements.stream().sorted(Integer::compareTo).collect(Collectors.toList());
@@ -140,6 +190,7 @@ public class Ideone
                     maxSumMap.replace(index, maxVal);
                     indexMap.replace(index, elements);
                     System.out.println("mapping = " + maxVal);
+
                     return index;
                 })
                 .collect(Collectors.toList());
@@ -149,9 +200,12 @@ public class Ideone
                 .stream()
                 .mapToInt(v -> v)
                 .max().orElseThrow(NoSuchElementException::new);
-        Integer maxVal = maxSumMap.get(max);
 
-//        System.out.println("max: " + max);
+        int lastMax = maxValList.stream().max(Integer::compareTo).orElse(-1);
+
+        System.out.println("max: " + max + " | lastMax: " + lastMax);
+
+        Integer maxVal = maxSumMap.get(max);
 
         List<Integer> result = maxSumMap
                 .entrySet()

@@ -16,8 +16,10 @@ public class ConstituteMaxSum
 {
     public static void main(String[] args)
     {
-        List<Integer> numbers = Arrays.asList(4, 5, 4, 3);
+//        List<Integer> numbers = Arrays.asList(4, 5, 4, 3);
 //        List<Integer> numbers = Arrays.asList(1, 9, 1, 7, 7, 5, 4, 1, 6);
+        List<Integer> numbers = Arrays.asList(-1, 7, 8, -5, 4, 9, -2, 3);
+
         String sss = "";
         String ddd = "";
         Ideone mm = new Ideone();
