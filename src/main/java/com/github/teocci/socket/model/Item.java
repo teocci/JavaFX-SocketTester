@@ -7,7 +7,7 @@ package com.github.teocci.socket.model;
  */
 public class Item
 {
-    long id;
+    private long id;
 
     public Item(long id)
     {
@@ -27,5 +27,20 @@ public class Item
     public String toString()
     {
         return String.valueOf(this.id);
+    }
+
+    public long getId()
+    {
+        return id;
+    }
+
+    public void setId(long id)
+    {
+        this.id = id;
+    }
+
+    public Item clone()
+    {
+        return new Item(id);
     }
 }

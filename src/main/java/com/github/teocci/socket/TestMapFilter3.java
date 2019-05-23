@@ -1,6 +1,10 @@
 package com.github.teocci.socket;
 
+import com.github.teocci.socket.model.Hosting;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -57,5 +61,29 @@ public class TestMapFilter3
         // {1=linode.com, 2=heroku.com, 6=google.com, 8=naver.com, 9=yandex.com}
         Map<Integer, String> filteredMap4 = filterByValue(HOSTING, x -> (x.length() <= 10));
         System.out.println(filteredMap4);
+
+
+        List<Hosting> list = new ArrayList<>();
+        list.add(new Hosting(1, "liquidweb.com", 80000));
+        list.add(new Hosting(2, "linode.com", 90000));
+        list.add(new Hosting(3, "digitalocean.com", 120000));
+        list.add(new Hosting(4, "aws.amazon.com", 200000));
+        list.add(new Hosting(5, "mkyong.com", 1));
+
+        list.add(new Hosting(6, "linode.com", 100000)); // new line
+
+        // key = name, value - websites , but the key 'linode' is duplicated!?
+        Map<String, Long> result1 = list.stream().collect(
+                Collectors.toMap(Hosting::getName, Hosting::getWebsites));
+
+        System.out.println("Result 1 : " + result1);
+
+        Map<String, Long> result2 = list.stream().collect(
+                Collectors.toMap(Hosting::getName, Hosting::getWebsites,
+                        (oldValue, newValue) -> oldValue
+                )
+        );
+
+        System.out.println("Result 2 : " + result2);
     }
 }
