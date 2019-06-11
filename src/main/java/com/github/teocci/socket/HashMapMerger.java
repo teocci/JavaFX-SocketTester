@@ -2,6 +2,8 @@ package com.github.teocci.socket;
 
 import com.github.teocci.socket.model.Hosting;
 import com.github.teocci.socket.model.Item;
+import com.github.teocci.socket.model.POLine;
+import com.github.teocci.socket.model.SearchResponse;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.util.*;
@@ -113,6 +115,10 @@ public class HashMapMerger
 //        };
 
 
+
+
+
+
         StopWatch watch = new StopWatch();
         watch.start();
         System.out.println("solutionForeach()");
@@ -167,6 +173,39 @@ public class HashMapMerger
 
         List<Date> dates = filter(Date.class, items);
         System.out.println(dates);
+
+
+        List<SearchResponse> poSearchResponseList = Stream.of(
+                new SearchResponse(),
+                new SearchResponse()
+        ).collect(Collectors.toList());
+
+//        Stream<Stream<POLine>> list = poSearchResponseList
+//                .stream()
+//                .map(poSearchResponse -> poSearchResponse.getDeliveryDocumentLines()
+//                        .stream()
+//                        .map(deliveryDocumentLine -> POLine
+//                                .builder()
+//                                .poLineNumber(deliveryDocumentLine.getPurchaseReferenceLineNumber())
+//                                .quantity(deliveryDocumentLine.getExpectedQty())
+//                                .vnpkQty(deliveryDocumentLine.getVnpkQty())
+//                                .build()
+//                        )
+//                );
+
+        List<POLine> list = poSearchResponseList
+                .stream()
+                .flatMap(response -> response.getDeliveryDocumentLines()
+                        .stream()
+                        .map(item -> POLine.builder()
+                                .poLineNumber(item.getPurchaseReferenceLineNumber())
+                                .quantity(item.getExpectedQty())
+                                .vnpkQty(item.getVnpkQty())
+                                .build()
+                        )
+                )
+                .collect(Collectors.toList());
+        System.out.println(list);
     }
 
     private static Map<String, Hosting> list2Map(List<Hosting> list)
