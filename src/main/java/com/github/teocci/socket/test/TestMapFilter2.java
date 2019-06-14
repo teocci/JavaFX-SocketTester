@@ -1,4 +1,4 @@
-package com.github.teocci.socket;
+package com.github.teocci.socket.test;
 
 import java.util.HashMap;
 import java.util.Map;

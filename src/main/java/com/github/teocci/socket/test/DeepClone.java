@@ -1,4 +1,4 @@
-package com.github.teocci.socket;
+package com.github.teocci.socket.test;
 
 import com.github.teocci.socket.model.Item;
 
@@ -6,8 +6,8 @@ import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.github.teocci.socket.HashMapMerger.entriesToMap;
-import static com.github.teocci.socket.HashMapMerger.entry;
+import static com.github.teocci.socket.test.HashMapMerger.entriesToMap;
+import static com.github.teocci.socket.test.HashMapMerger.entry;
 
 /**
  * Created by teocci.

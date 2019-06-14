@@ -1,4 +1,4 @@
-package com.github.teocci.socket;
+package com.github.teocci.socket.test;
 
 import com.github.teocci.socket.model.Hosting;
 

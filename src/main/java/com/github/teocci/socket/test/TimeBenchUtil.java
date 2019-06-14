@@ -1,4 +1,4 @@
-package com.github.teocci.socket;
+package com.github.teocci.socket.test;
 
 import com.google.common.base.Stopwatch;
 import org.apache.commons.lang3.time.StopWatch;

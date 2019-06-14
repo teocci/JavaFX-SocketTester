@@ -1,4 +1,4 @@
-package com.github.teocci.socket;
+package com.github.teocci.socket.test;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
